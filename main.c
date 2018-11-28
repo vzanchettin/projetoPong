@@ -225,20 +225,27 @@ void desenharBola(int x, int y, int cor) {
 	yBola = y;
 
 }
-/* Apagar a bola baseado na última posição*/
-/*
-void apagarBola(void){
+
+void desenharPayer(int player, int y, int a, int l) {
+	
+	int x = 1;
+
+	if (player == 1) {
+
+		x = 1;
+	} else {
+		x = 38;
+	}
 
     usart_putc1(0x26);
 	usart_putc1(0x72);
 	usart_putc1(x & 0xFF); // x
 	usart_putc1(y & 0xFF); // y
-	usart_putc1(1 & 0xFF); // h
-	usart_putc1(1 & 0xFF); // w
-	usart_putc1(0x00); // Color
-
+	usart_putc1(a & 0xFF); // h
+	usart_putc1(l & 0xFF); // w
+	usart_putc1(0x04); // Color
 }
-*/
+
 int main(void){
 	usart_init0(); // Inicializa a porta serial 0
 	usart_init1(9600);//  Inicializa a porta serial 1
@@ -248,6 +255,10 @@ int main(void){
 	
 	/* Desenha a bola inicial */
 	desenharBola(3,8,0);
+
+	/* Desenha o player */
+	desenharPayer(1, 13, 5, 1);
+	desenharPayer(2, 13, 5, 1);
 
 	/* Inicializa o timer em 100ms */
 	init_timer3(1);
