@@ -3,21 +3,48 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 
-volatile int xBola, yBola;
+volatile int xBola = 0;
+volatile int yBola = 0;
+
+/* coleta dos potenciometros */
+volatile unsigned char buffer[3];
+volatile unsigned int index = 0;
+volatile unsigned int pot1 = 0;
+volatile unsigned int pot2 = 0;
+
 
 /* Sentido da bola 0(esqueda), 1(direita) 
    0(subindo) e 1(descendo) */
 volatile int sentidoBolaX = 1;
 volatile int sentidoBolaY = 1;
 
+volatile int barraPlayer1[5];
+volatile int barraPlayer2[5];
+
 ISR(TIMER3_COMPA_vect){
 
 	/* Caminhar da bola*/
 	if (xBola == 39) {
 
+		exit(0);
+
+	} else if ((xBola == 37 && yBola == barraPlayer2[0])
+				|| (xBola == 37 && yBola == barraPlayer2[1]) 
+				|| (xBola == 37 && yBola == barraPlayer2[2])
+				|| (xBola == 37 && yBola == barraPlayer2[3])
+				|| (xBola == 37 && yBola == barraPlayer2[4])) {
+
 		sentidoBolaX = 0;
 
 	} else if (xBola == 0) {
+
+		exit(0);
+
+	} else if ((xBola == 2 && yBola == barraPlayer1[0])
+				|| (xBola == 2 && yBola == barraPlayer1[1]) 
+				|| (xBola == 2 && yBola == barraPlayer1[2])
+				|| (xBola == 2 && yBola == barraPlayer1[3])
+				|| (xBola == 2 && yBola == barraPlayer1[4])) {
 
 		sentidoBolaX = 1;
 
@@ -191,6 +218,22 @@ void usart_puts1(char *str)
 ISR(USART1_RX_vect){
 	 
 	 /* Pegar o retorno do UDR1*/
+	// usart_putc0(UDR1);
+
+	/* Coleta dos potenciometros */
+	
+	if(UDR1 == 0x54) {
+  		index = 0;
+ 	} else {  
+
+ 		buffer[index ++] = UDR1;
+ 		if(index == 3) {
+   			pot1 = (buffer[1] & 0x03) << 8 | buffer[2];
+   			pot2 = (buffer[0] & 0x0F) << 8 | buffer[1] & 0xFC;
+  		}
+ 	} 
+
+
 }
 
 /* Fução para pintar a tela*/
@@ -229,6 +272,7 @@ void desenharBola(int x, int y, int cor) {
 void desenharPayer(int player, int y, int a, int l) {
 	
 	int x = 1;
+	int i;
 
 	if (player == 1) {
 
@@ -244,6 +288,24 @@ void desenharPayer(int player, int y, int a, int l) {
 	usart_putc1(a & 0xFF); // h
 	usart_putc1(l & 0xFF); // w
 	usart_putc1(0x04); // Color
+
+	/* Proteção da barra quando a bola bate */
+	if (player == 1) {
+
+		for (i = 0; i < 5; i++) {
+
+			barraPlayer1[i] = y;
+			y++;
+		} 
+	} else {
+
+		for (i = 0; i < 5; i++) {
+
+			barraPlayer2[i] = y;
+			y++;
+		} 
+
+	}
 }
 
 int main(void){
@@ -254,10 +316,11 @@ int main(void){
 	corTela(7,4);
 	
 	/* Desenha a bola inicial */
-	desenharBola(3,8,0);
+	desenharBola(16,8,0);
 
-	/* Desenha o player */
-	desenharPayer(1, 13, 5, 1);
+	/* Desenha o player o y é de cima para baixo e o tamanho também 
+	se no y colocar 2, ele começa na linha 3 até a 7 */
+	desenharPayer(1, 5, 5, 1);
 	desenharPayer(2, 13, 5, 1);
 
 	/* Inicializa o timer em 100ms */
