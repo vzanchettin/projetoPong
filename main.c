@@ -11,7 +11,10 @@ volatile unsigned char buffer[3];
 volatile unsigned int index = 0;
 volatile unsigned int pot1 = 0;
 volatile unsigned int pot2 = 0;
-
+volatile int pot1Atual = 0;
+volatile int pot1Swap = 0;
+volatile int pot2Atual = 0;
+volatile int pot2Swap = 0;
 
 /* Sentido da bola 0(esqueda), 1(direita) 
    0(subindo) e 1(descendo) */
@@ -21,12 +24,13 @@ volatile int sentidoBolaY = 1;
 volatile int barraPlayer1[5];
 volatile int barraPlayer2[5];
 
+ // TIMER quando passar de 100ms 
 ISR(TIMER3_COMPA_vect){
 
 	/* Caminhar da bola*/
 	if (xBola == 39) {
 
-		exit(0);
+		//exit(0);
 
 	} else if ((xBola == 37 && yBola == barraPlayer2[0])
 				|| (xBola == 37 && yBola == barraPlayer2[1]) 
@@ -38,7 +42,7 @@ ISR(TIMER3_COMPA_vect){
 
 	} else if (xBola == 0) {
 
-		exit(0);
+		//exit(0);
 
 	} else if ((xBola == 2 && yBola == barraPlayer1[0])
 				|| (xBola == 2 && yBola == barraPlayer1[1]) 
@@ -83,11 +87,23 @@ ISR(TIMER3_COMPA_vect){
 	}
 
 	desenharBola(xBola, yBola,0);
+
+	if ((pot1Atual != pot1Swap) || (pot2Atual != pot2Swap)) {
+
+		apagarPlayer();
+
+		desenharPlayer(1, pot1Atual, 5, 1);
+		desenharPlayer(2, pot2Atual, 5, 1);
+
+		pot1Swap = pot1Atual;
+		pot2Swap = pot2Atual;
+	}
+	
 	
 
 }
 
-// Configuração do timer3
+// Inciaialaiza o teimer 2
 void init_timer3(int tempo) {
 
 	//Configurando os registradores do timer
@@ -201,15 +217,13 @@ void usart_putc0(char c){
 	while (!(UCSR0A & (1 << TXC0)));
 }
 
-void usart_puts0(char *str)
-{
+void usart_puts0(char *str){
 	while (*str) {
 		usart_putc0(*str++);
 	}
 }
 
-void usart_puts1(char *str)
-{
+void usart_puts1(char *str){
 	while (*str) {
 		usart_putc1(*str++);
 	}
@@ -228,8 +242,12 @@ ISR(USART1_RX_vect){
 
  		buffer[index ++] = UDR1;
  		if(index == 3) {
-   			pot1 = (buffer[1] & 0x03) << 8 | buffer[2];
-   			pot2 = (buffer[0] & 0x0F) << 8 | buffer[1] & 0xFC;
+   			pot1 = ((buffer[1] & 0x03) << 8) | (buffer[2] & 0xFF);
+   			pot2 = ((buffer[0] & 0x0F) << 6) | ((buffer[1] & 0xFC) >> 2);
+
+			pot1Atual = (pot1 * 30) / 1023;
+			pot2Atual = (pot2 * 30) / 1023; 
+
   		}
  	} 
 
@@ -238,15 +256,16 @@ ISR(USART1_RX_vect){
 
 /* Fução para pintar a tela*/
 void corTela(int bordas, int centro) {
+	
 	usart_putc1(0x26);
 	usart_putc1(0x78);
- 	usart_putc1(centro & 0xFF); // de 0 á 6
-
-
-	usart_putc1(0x26);
-	usart_putc1(0x72);
-	usart_putc1(0 & 0xFF); // x
-	usart_putc1(1 & 0xFF); // y
+	usart_putc1(centro & 0xFF); // x
+	
+	
+	usart_putc1(0x26); // y        
+	usart_putc1(0x72); // H
+	usart_putc1(0 & 0xFF); // w
+	usart_putc1(1 & 0xFF); // c
 	usart_putc1(28 & 0xFF); // h
 	usart_putc1(40 & 0xFF); // w
 	usart_putc1(bordas & 0xFF); // Color
@@ -269,7 +288,7 @@ void desenharBola(int x, int y, int cor) {
 
 }
 
-void desenharPayer(int player, int y, int a, int l) {
+void desenharPlayer1(int player, int y, int a, int l) {
 	
 	int x = 1;
 	int i;
@@ -308,6 +327,58 @@ void desenharPayer(int player, int y, int a, int l) {
 	}
 }
 
+void desenharPlayer(int player, int y, int a, int l) {
+	
+	int x = 1;
+	int i;
+
+	if (player == 1) {
+
+		x = 1;
+	} else {
+		x = 38;
+	}
+
+    usart_putc1(0x26);
+	usart_putc1(0x72);
+	usart_putc1(x & 0xFF); // x
+	usart_putc1(y & 0xFF); // y
+	usart_putc1(a & 0xFF); // h
+	usart_putc1(l & 0xFF); // w
+	usart_putc1(0x04); // Color
+
+	/* Proteção da barra quando a bola bate */
+	if (player == 1) {
+
+		for (i = 0; i < 5; i++) {
+
+
+			barraPlayer1[i] = y;
+			y++;
+		} 
+	} else {
+
+		for (i = 0; i < 5; i++) {
+
+			barraPlayer2[i] = y;
+			y++;
+		} 
+
+	}
+}
+
+void apagarPlayer(void) {
+	
+	usart_putc1(0x26);
+	usart_putc1(0x72);
+	usart_putc1(1 & 0xFF); // x
+	usart_putc1(1 & 0xFF); // y
+	usart_putc1(38 & 0xFF); // h
+	usart_putc1(1 & 0xFF); // w
+	usart_putc1(0x07); // Color
+
+}
+
 int main(void){
 	usart_init0(); // Inicializa a porta serial 0
 	usart_init1(9600);//  Inicializa a porta serial 1
@@ -320,8 +391,10 @@ int main(void){
 
 	/* Desenha o player o y é de cima para baixo e o tamanho também 
 	se no y colocar 2, ele começa na linha 3 até a 7 */
-	desenharPayer(1, 5, 5, 1);
-	desenharPayer(2, 13, 5, 1);
+	desenharPlayer(1, pot1Atual, 5, 1);
+	pot1Swap = pot1Atual;
+	desenharPlayer(2, pot2Atual, 5, 1);
+	pot2Swap = pot2Atual;	
 
 	/* Inicializa o timer em 100ms */
 	init_timer3(1);
