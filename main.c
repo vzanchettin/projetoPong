@@ -3,8 +3,14 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 
+/* Controle do x e y da bola */
 volatile int xBola = 0;
 volatile int yBola = 0;
+
+/* Controle dos pontos */
+volatile int pontosPlayer1 = 0;
+volatile int pontosPlayer2 = 0;
+volatile int corPonto = 9;
 
 /* coleta dos potenciometros */
 volatile unsigned char buffer[3];
@@ -30,7 +36,33 @@ ISR(TIMER3_COMPA_vect){
 	/* Caminhar da bola*/
 	if (xBola == 39) {
 
-		//exit(0);
+		pontosPlayer1++;
+
+		switch (pontosPlayer1)
+		{
+   			case 1:
+
+   				desenhar1px(0, 0, corPonto);
+				desenharBola(xBola, yBola, 7);
+				xBola = 21;
+				yBola = 14;	
+   				break;
+
+		    case 2:
+
+   				desenhar1px(2, 0, corPonto);
+				desenharBola(xBola, yBola, 7);
+				xBola = 21;
+				yBola = 14;
+   				break;
+
+   			case 3:
+   				desenhar1px(4, 0, corPonto);
+   				desenharTelaFim();
+    			exit(0);
+    			break;
+
+		}
 
 	} else if ((xBola == 37 && yBola == barraPlayer2[0])
 				|| (xBola == 37 && yBola == barraPlayer2[1]) 
@@ -42,7 +74,33 @@ ISR(TIMER3_COMPA_vect){
 
 	} else if (xBola == 0) {
 
-		//exit(0);
+		pontosPlayer2++;
+		
+		switch (pontosPlayer2)
+		{
+   			case 1:
+
+   				desenhar1px(39, 0, corPonto);
+				desenharBola(xBola, yBola, 7);
+				xBola = 21;
+				yBola = 14;	
+   				break;
+
+		    case 2:
+
+   				desenhar1px(37, 0, corPonto);
+				desenharBola(xBola, yBola, 7);
+				xBola = 21;
+				yBola = 14;
+   				break;
+
+   			case 3:
+   				desenhar1px(35, 0, corPonto);
+   				desenharTelaFim();
+    			exit(0);
+    			break;
+
+		}
 
 	} else if ((xBola == 2 && yBola == barraPlayer1[0])
 				|| (xBola == 2 && yBola == barraPlayer1[1]) 
@@ -86,7 +144,7 @@ ISR(TIMER3_COMPA_vect){
 
 	}
 
-	desenharBola(xBola, yBola,0);
+	desenharBola(xBola, yBola, 0);
 
 	if ((pot1Atual != pot1Swap) || (pot2Atual != pot2Swap)) {
 
@@ -373,9 +431,63 @@ void apagarPlayer(void) {
 	usart_putc1(0x72);
 	usart_putc1(1 & 0xFF); // x
 	usart_putc1(1 & 0xFF); // y
-	usart_putc1(38 & 0xFF); // h
+	usart_putc1(28 & 0xFF); // h
 	usart_putc1(1 & 0xFF); // w
 	usart_putc1(0x07); // Color
+
+}
+
+void desenhar1px(int x, int y, int cor) {
+	
+	usart_putc1(0x26);
+	usart_putc1(0x72);
+	usart_putc1(x & 0xFF); // x
+	usart_putc1(y & 0xFF); // y
+	usart_putc1(1 & 0xFF); // h
+	usart_putc1(1 & 0xFF); // w
+	usart_putc1(cor & 0xFF); // Color
+
+}
+
+void desenharTelaFim(void) {
+
+	/* Letra F */
+	desenhar1px(11,12,9);
+	desenhar1px(11,13,9);
+	desenhar1px(11,14,9);
+	desenhar1px(11,15,9);
+	desenhar1px(11,16,9);
+	desenhar1px(11,17,9);
+	desenhar1px(12,12,9);
+	desenhar1px(13,12,9);
+	desenhar1px(12,14,9);
+	
+	/* Letra I */
+	desenhar1px(16,12,9);
+	desenhar1px(16,13,9);
+	desenhar1px(16,14,9);
+	desenhar1px(16,15,9);
+	desenhar1px(16,16,9);
+	desenhar1px(16,17,9);
+
+	/* Letra M */
+	desenhar1px(19,12,9);
+	desenhar1px(19,13,9);
+	desenhar1px(19,14,9);
+	desenhar1px(19,15,9);
+	desenhar1px(19,16,9);
+	desenhar1px(19,17,9);
+	desenhar1px(20,12,9);
+	desenhar1px(21,12,9);
+	desenhar1px(21,13,9);
+	desenhar1px(21,14,9);
+	desenhar1px(22,12,9);
+	desenhar1px(23,12,9);
+	desenhar1px(23,13,9);
+	desenhar1px(23,14,9);
+	desenhar1px(23,15,9);
+	desenhar1px(23,16,9);
+	desenhar1px(23,17,9);
 
 }
 
@@ -387,7 +499,7 @@ int main(void){
 	corTela(7,4);
 	
 	/* Desenha a bola inicial */
-	desenharBola(16,8,0);
+	desenharBola(20,8,0);
 
 	/* Desenha o player o y é de cima para baixo e o tamanho também 
 	se no y colocar 2, ele começa na linha 3 até a 7 */
