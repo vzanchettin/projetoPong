@@ -392,6 +392,11 @@ void usart_init0(void) {
 			x = 38;
 		}
 
+		if (y >= 24) {
+
+			y = 24;
+		}
+
 		usart_putc1(0x26);
 		usart_putc1(0x72);
 		usart_putc1(x & 0xFF); // x
