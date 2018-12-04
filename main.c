@@ -1,18 +1,21 @@
-	#include <avr/io.h>
-	#include <util/delay.h>
-	#include <avr/interrupt.h>
-	#include <stdio.h>
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
 
-	/* Controle do x e y da bola */
+/* Trabalho 3 - PONG
+	Alunos: Giulia Ferrari, Paulo M. Junior, Vinicio Zanchettin */
+
+/* Controle do x e y da bola */
 volatile int xBola = 0;
 volatile int yBola = 0;
 
-	/* Controle dos pontos */
+/* Controle dos pontos */
 volatile int pontosPlayer1 = 0;
 volatile int pontosPlayer2 = 0;
 volatile int corPonto = 9;
 
-	/* coleta dos potenciometros */
+/* coleta dos potenciometros */
 volatile unsigned char buffer[3];
 volatile unsigned int index = 0;
 volatile unsigned int pot1 = 0;
@@ -22,23 +25,23 @@ volatile int pot1Swap = 0;
 volatile int pot2Atual = 0;
 volatile int pot2Swap = 0;
 
-	/* Sentido da bola 0(esqueda), 1(direita) 
-	   0(subindo) e 1(descendo) */
+/* Sentido da bola 0(esqueda), 1(direita) 
+	 0(subindo) e 1(descendo) */
 volatile int sentidoBolaX = 1;
 volatile int sentidoBolaY = 1;
 
-	/* Configuração das barras */
+/* Configuração das barras */
 volatile int barraPlayer1[5];
 volatile int barraPlayer2[5];
 
-	/* Modo de jogo 0 single e 1 dual player */
+/* Modo de jogo 0 single e 1 dual player */
 volatile int modoDeJogo = 1;
 volatile int yBolaSwap = 0;
 
-	 // TIMER quando passar de 100ms 
+// TIMER quando passar de 100ms 
 ISR(TIMER3_COMPA_vect){
 
-		/* Caminhar da bola*/
+	/* Caminhar da bola*/
 	if (xBola == 39) {
 
 		pontosPlayer1++;
@@ -195,29 +198,29 @@ ISR(TIMER3_COMPA_vect){
 
 }
 
-	// Inciaialaiza o teimer 2
+// Inciaialaiza o teimer 2
 void init_timer3(int tempo) {
 
-		//Configurando os registradores do timer
+	//Configurando os registradores do timer
 	TCCR3A = 0x00;
 	TCCR3B = 0x00;
 	TCCR3C = 0x00;
 
-		//Precisa disso porque a contagem é muito rápida (aproximandamente 4 ms para contar de 0 até FFFF)
+	//Precisa disso porque a contagem é muito rápida (aproximandamente 4 ms para contar de 0 até FFFF)
 	TCCR3B |= (1 << 2) | (1 << 0);
 
-		//Configura o timer para modo CTC
+	//Configura o timer para modo CTC
 	TCCR3B |= (1 << 3);
 
-		//Habilitar a interrupção de overflow do Timer 1 (quando chegar no valor máximo)
+	//Habilitar a interrupção de overflow do Timer 1 (quando chegar no valor máximo)
 	TIMSK3 = 1 << 1;
 
-	    // Os ciclos definem o tempo da interrupção casa ciclo equivale a 100ms
+	 // Os ciclos definem o tempo da interrupção casa ciclo equivale a 100ms
 	OCR3A = (1562*tempo);
 }
 
 void usart_init0(void) {
-		//Configurar o baud rate (taxa de transmissao e recepção dos dados pela porta serial)
+	//Configurar o baud rate (taxa de transmissao e recepção dos dados pela porta serial)
 	int baud = 103;
 
 		//Dois registradores uma com parte alta e outra com parte baixa
@@ -323,11 +326,10 @@ void usart_init0(void) {
 
 		ISR(USART1_RX_vect){
 
-		 /* Pegar o retorno do UDR1*/
-		// usart_putc0(UDR1);
+			/* Pegar o retorno do UDR1*/
+			// usart_putc0(UDR1);
 
-		/* Coleta dos potenciometros */
-
+			/* Coleta dos potenciometros */
 			if(UDR1 == 0x54) {
 				index = 0;
 			} else {  
@@ -342,15 +344,13 @@ void usart_init0(void) {
 
 				}
 			} 
-
-
 		}
 
-	/* Fução para pintar a tela*/
+		/* Fução para pintar a tela*/
 		void corTela(int bordas, int centro) {
 
-			usart_putc1(0x26);
-			usart_putc1(0x78);
+		usart_putc1(0x26);
+		usart_putc1(0x78);
 		usart_putc1(centro & 0xFF); // x
 		
 		
